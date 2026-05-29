@@ -11,6 +11,7 @@ import Grade from "../models/Grade.js";
 import News from "../models/News.js";
 import { requireAuth } from "../middleware/authMiddleware.js";
 import { ensureDefaultAcademicData } from "../lib/academicSeed.js";
+import { ensureDeanAcademicHierarchy } from "../lib/deanAcademicSeed.js";
 import {
   normalizeClockTime,
   isValidClockTime,
@@ -1042,7 +1043,7 @@ router.post("/me/schedule/upload", upload.single("file"), async (req, res) => {
                     teacherUserId,
                     room: parseRoomForWeekType(parsed.room, weekType),
                     lessonType: parsed.lessonType === "lecture" ? "lecture" : "practice",
-                    note: "",
+                    note: rawCell.slice(0, 500),
                     studyForm: "full-time",
                     subgroup: "all",
                   }
@@ -1058,7 +1059,7 @@ router.post("/me/schedule/upload", upload.single("file"), async (req, res) => {
                     teacherUserId,
                     room: parseRoomForWeekType(parsed.room, weekType),
                     lessonType: parsed.lessonType === "lecture" ? "lecture" : "practice",
-                    note: "",
+                    note: rawCell.slice(0, 500),
                     studyForm: "full-time",
                     subgroup: "all",
                   };
@@ -1218,7 +1219,7 @@ router.post("/me/schedule/upload", upload.single("file"), async (req, res) => {
                 teacherUserId: user._id,
                 room: parseRoomForWeekType(roomFinal, weekType),
                 lessonType: lesson.lessonType === "lecture" ? "lecture" : "practice",
-                note: "",
+                note: rawCell.slice(0, 500),
                 studyForm: "full-time",
                 subgroup: "all",
               }
@@ -1234,7 +1235,7 @@ router.post("/me/schedule/upload", upload.single("file"), async (req, res) => {
                 teacherUserId: user._id,
                 room: parseRoomForWeekType(roomFinal, weekType),
                 lessonType: lesson.lessonType === "lecture" ? "lecture" : "practice",
-                note: "",
+                note: rawCell.slice(0, 500),
                 studyForm: "full-time",
                 subgroup: "all",
               };
@@ -1491,15 +1492,35 @@ router.get("/me/grades", async (req, res) => {
   }
 });
 
-router.get("/news", async (_req, res) => {
+function newsToFeedDto(doc, viewerId = "") {
+  const viewer = String(viewerId || "");
+  const likedBy = Array.isArray(doc.likedBy) ? doc.likedBy : [];
+  const comments = Array.isArray(doc.comments) ? doc.comments : [];
+  return {
+    id: String(doc._id),
+    title: doc.title,
+    text: doc.text,
+    imageUrl: doc.imageUrl || "",
+    publishedAt: doc.publishedAt,
+    likeCount: likedBy.length,
+    likedByMe: viewer ? likedBy.some((id) => String(id) === viewer) : false,
+    commentCount: comments.length,
+    comments: comments
+      .slice()
+      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
+      .map((comment) => ({
+        id: String(comment._id),
+        authorName: comment.authorName || "Пользователь",
+        body: comment.body,
+        createdAt: comment.createdAt,
+      })),
+  };
+}
+
+router.get("/news", async (req, res) => {
   try {
-    const items = await News.find().sort({ publishedAt: -1 }).select("title text publishedAt").lean();
-    const news = items.map((n) => ({
-      id: String(n._id),
-      title: n.title,
-      text: n.text,
-      publishedAt: n.publishedAt,
-    }));
+    const items = await News.find().sort({ publishedAt: -1 });
+    const news = items.map((n) => newsToFeedDto(n, req.user.userId));
     return res.status(200).json({ news });
   } catch (error) {
     console.log("Ошибка в /academic/news:", error);
@@ -1507,8 +1528,56 @@ router.get("/news", async (_req, res) => {
   }
 });
 
+router.post("/news/:id/like", async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const news = await News.findById(req.params.id);
+    if (!news) return res.status(404).json({ message: "Новость не найдена" });
+
+    const liked = (news.likedBy || []).some((id) => String(id) === String(userId));
+    if (liked) {
+      news.likedBy = news.likedBy.filter((id) => String(id) !== String(userId));
+    } else {
+      news.likedBy.push(userId);
+    }
+    await news.save();
+    return res.status(200).json({ news: newsToFeedDto(news, userId) });
+  } catch (error) {
+    console.log("Ошибка в POST /academic/news/:id/like:", error);
+    return res.status(500).json({ message: "Внутренняя ошибка сервера" });
+  }
+});
+
+router.post("/news/:id/comments", async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("fullName username email role");
+    if (!user) return res.status(404).json({ message: "Пользователь не найден" });
+
+    const body = String(req.body?.body || "").trim();
+    if (!body) return res.status(400).json({ message: "Введите комментарий" });
+    if (body.length > 1200) return res.status(400).json({ message: "Комментарий слишком длинный" });
+
+    const news = await News.findById(req.params.id);
+    if (!news) return res.status(404).json({ message: "Новость не найдена" });
+
+    news.comments.push({
+      authorId: user._id,
+      authorName: user.fullName?.trim() || user.username || user.email || "Пользователь",
+      body,
+      createdAt: new Date(),
+    });
+    await news.save();
+    return res.status(201).json({ news: newsToFeedDto(news, user._id) });
+  } catch (error) {
+    console.log("Ошибка в POST /academic/news/:id/comments:", error);
+    return res.status(500).json({ message: "Внутренняя ошибка сервера" });
+  }
+});
+
 router.get("/hierarchy", async (_req, res) => {
   try {
+    await ensureDeanAcademicHierarchy();
+
     const groups = await Group.find()
       .populate({
         path: "programId",

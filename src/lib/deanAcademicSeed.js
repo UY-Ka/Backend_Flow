@@ -4,6 +4,7 @@ import Program from "../models/Program.js";
 import Group from "../models/Group.js";
 import ScheduleItem from "../models/ScheduleItem.js";
 import User from "../models/User.js";
+import { EF_DEMO_GROUPS } from "../data/demoEfStudents.js";
 
 /** Значения формы обучения в БД (совпадают с клиентом) */
 export const STUDY_FORMS = ["full-time", "part-time", "distance"];
@@ -161,6 +162,8 @@ export async function ensureDeanAcademicHierarchy() {
 
       await ensurePi410Students(canonGroup._id);
     }
+
+    await ensureEfGroupsAndStudents(econ._id);
   }
 
   try {
@@ -371,5 +374,89 @@ async function ensurePi410Students(groupId) {
       fullName,
       profileImage: "",
     });
+  }
+}
+
+async function ensureEfGroupsAndStudents(facultyId) {
+  let program =
+    (await Program.findOne({ code: "ECONOMICS", facultyId }).select("_id")) ||
+    (await Program.findOne({ name: "Экономика", facultyId }).select("_id"));
+
+  if (program?._id) {
+    await Program.updateOne(
+      { _id: program._id },
+      { $set: { name: "Экономика", code: "ECONOMICS", facultyId } }
+    );
+  } else {
+    program = await Program.create({
+      name: "Экономика",
+      code: "ECONOMICS",
+      facultyId,
+    });
+  }
+
+  const programId = program._id || program;
+  const defaultPassword = String(process.env.DEMO_STUDENT_PASSWORD || "Student123!");
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(defaultPassword, salt);
+
+  for (const groupConfig of EF_DEMO_GROUPS) {
+    const groupName = String(groupConfig.name || "").trim();
+    if (!groupName) continue;
+
+    let group = await Group.findOne({ name: groupName, programId }).select("_id");
+    if (group?._id) {
+      await Group.updateOne(
+        { _id: group._id },
+        {
+          $set: {
+            name: groupName,
+            course: Number(groupConfig.course) || 4,
+            programId,
+          },
+        }
+      );
+    } else {
+      group = await Group.create({
+        name: groupName,
+        course: Number(groupConfig.course) || 4,
+        programId,
+      });
+    }
+
+    const groupId = group._id || group;
+    for (const student of groupConfig.students || []) {
+      const username = String(student.username || "").trim();
+      const email = String(student.email || "").toLowerCase().trim();
+      const fullName = String(student.fullName || "").trim();
+      const subgroup = ["a", "b"].includes(String(student.subgroup || "").toLowerCase())
+        ? String(student.subgroup).toLowerCase()
+        : "a";
+      if (!username || !email || !fullName) continue;
+
+      const existing =
+        (await User.findOne({ email }).select("_id")) ||
+        (await User.findOne({ username }).select("_id")) ||
+        (await User.findOne({ role: "student", fullName }).select("_id"));
+
+      const payload = {
+        username,
+        email,
+        password: passwordHash,
+        role: "student",
+        isEmailVerified: true,
+        groupId,
+        studyForm: "full-time",
+        subgroup,
+        fullName,
+        profileImage: "",
+      };
+
+      if (existing?._id) {
+        await User.updateOne({ _id: existing._id }, { $set: payload });
+      } else {
+        await User.create(payload);
+      }
+    }
   }
 }

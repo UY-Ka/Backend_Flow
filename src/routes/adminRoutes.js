@@ -1,4 +1,6 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 import multer from "multer";
 import xlsx from "xlsx";
 
@@ -25,6 +27,42 @@ const upload = multer({
     return cb(new Error("Загрузите файл .xlsx или .xls"), false);
   },
 });
+
+const newsImagesDir = path.join(process.cwd(), "uploads", "news");
+fs.mkdirSync(newsImagesDir, { recursive: true });
+
+const newsImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, newsImagesDir),
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    const safeExt = [".jpg", ".jpeg", ".png", ".webp"].includes(ext) ? ext : ".jpg";
+    const unique = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    cb(null, `news-${unique}${safeExt}`);
+  },
+});
+
+const newsImageUpload = multer({
+  storage: newsImageStorage,
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const okMime = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (file.mimetype && okMime.has(file.mimetype)) return cb(null, true);
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    if ([".jpg", ".jpeg", ".png", ".webp"].includes(ext)) return cb(null, true);
+    return cb(new Error("Допустимы только изображения JPG, PNG, WebP"), false);
+  },
+});
+
+function uploadedNewsImageUrl(req) {
+  if (!req.file?.filename) return "";
+  const proto = req.headers["x-forwarded-proto"]
+    ? String(req.headers["x-forwarded-proto"])
+    : req.protocol;
+  const host = req.headers["x-forwarded-host"]
+    ? String(req.headers["x-forwarded-host"])
+    : req.get("host");
+  return `${proto}://${host}/uploads/news/${req.file.filename}`;
+}
 
 function mustAdmin(user) {
   return user?.role === "admin";
@@ -989,10 +1027,10 @@ async function importFlatSchedule({ rows, program, errors, groups, teachers }) {
     const endTime = normalizeClockTime(getRowValue(r, FIELD_ALIASES.endTime) || timeRange?.endTime);
 
     const subjectCell = getRowValue(r, FIELD_ALIASES.subject);
-    const lessonCell = splitLessonCell(
+    const rawLessonCell =
       getRowValue(r, ["lesson", "занятие", "занятие подробно", "описание пары", "ячейка"]) ||
-        subjectCell
-    );
+      subjectCell;
+    const lessonCell = splitLessonCell(rawLessonCell);
     const subject = String(
       lessonCell?.subject || normalizeCellText(subjectCell) || ""
     ).trim();
@@ -1006,7 +1044,10 @@ async function importFlatSchedule({ rows, program, errors, groups, teachers }) {
     const studyForm = normalizeStudyForm(getRowValue(r, FIELD_ALIASES.studyForm));
     const subgroup = normalizeSubgroup(getRowValue(r, FIELD_ALIASES.subgroup) || groupSubgroup, "all");
     const note = String(
-      normalizeCellText(getRowValue(r, FIELD_ALIASES.note)) || lessonCell?.note || ""
+      normalizeCellText(getRowValue(r, FIELD_ALIASES.note)) ||
+        lessonCell?.note ||
+        normalizeCellText(rawLessonCell) ||
+        ""
     )
       .trim()
       .slice(0, 500);
@@ -1139,7 +1180,7 @@ async function importMatrixSchedule({ rows, merges, program, errors, groups, tea
           teacherUserId: teacherMatch?._id || null,
           room: lesson.room,
           lessonType: lesson.lessonType,
-          note: lesson.note,
+          note: lesson.note || rawCell.slice(0, 500),
           errors,
         });
         created += result.created;
@@ -1267,7 +1308,7 @@ async function importTeacherMatrixSchedule({ rows, program, errors, groups, teac
             teacherUserId: teacherCol.user?._id || null,
             room: parseRoomForWeekType(parsed.room, weekType),
             lessonType: parsed.lessonType,
-            note: parsed.note,
+            note: parsed.note || rawCell.slice(0, 500),
             errors,
           });
           created += result.created;
@@ -2003,11 +2044,27 @@ router.post("/schedule/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-function newsToDto(doc) {
+function newsToDto(doc, viewerId = "") {
+  const viewer = String(viewerId || "");
+  const likedBy = Array.isArray(doc.likedBy) ? doc.likedBy : [];
+  const comments = Array.isArray(doc.comments) ? doc.comments : [];
   return {
     id: String(doc._id),
     title: doc.title,
     text: doc.text,
+    imageUrl: doc.imageUrl || "",
+    likeCount: likedBy.length,
+    likedByMe: viewer ? likedBy.some((id) => String(id) === viewer) : false,
+    commentCount: comments.length,
+    comments: comments
+      .slice()
+      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
+      .map((comment) => ({
+        id: String(comment._id),
+        authorName: comment.authorName || "Пользователь",
+        body: comment.body,
+        createdAt: comment.createdAt,
+      })),
     publishedAt: doc.publishedAt,
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
@@ -2021,14 +2078,14 @@ router.get("/news", async (req, res) => {
     if (!mustAdmin(admin)) return res.status(403).json({ message: "Доступ только для администрации" });
 
     const items = await News.find().sort({ publishedAt: -1 });
-    return res.status(200).json({ news: items.map(newsToDto) });
+    return res.status(200).json({ news: items.map((item) => newsToDto(item, req.user.userId)) });
   } catch (error) {
     console.log("Ошибка в GET /admin/news:", error);
     return res.status(500).json({ message: "Внутренняя ошибка сервера" });
   }
 });
 
-router.post("/news", async (req, res) => {
+router.post("/news", newsImageUpload.single("image"), async (req, res) => {
   try {
     const admin = await User.findById(req.user.userId).select("role");
     if (!admin) return res.status(404).json({ message: "Пользователь не найден" });
@@ -2044,15 +2101,16 @@ router.post("/news", async (req, res) => {
       const d = new Date(req.body.publishedAt);
       if (!Number.isNaN(d.getTime())) publishedAt = d;
     }
-    const doc = await News.create({ title, text, publishedAt });
-    return res.status(201).json({ news: newsToDto(doc) });
+    const imageUrl = String(req.body?.imageUrl || "").trim() || uploadedNewsImageUrl(req);
+    const doc = await News.create({ title, text, imageUrl, publishedAt });
+    return res.status(201).json({ news: newsToDto(doc, req.user.userId) });
   } catch (error) {
     console.log("Ошибка в POST /admin/news:", error);
     return res.status(500).json({ message: "Внутренняя ошибка сервера" });
   }
 });
 
-router.patch("/news/:id", async (req, res) => {
+router.patch("/news/:id", newsImageUpload.single("image"), async (req, res) => {
   try {
     const admin = await User.findById(req.user.userId).select("role");
     if (!admin) return res.status(404).json({ message: "Пользователь не найден" });
@@ -2077,8 +2135,13 @@ router.patch("/news/:id", async (req, res) => {
       if (Number.isNaN(d.getTime())) return res.status(400).json({ message: "Некорректная дата публикации" });
       doc.publishedAt = d;
     }
+    if (req.file) {
+      doc.imageUrl = uploadedNewsImageUrl(req);
+    } else if (req.body?.imageUrl !== undefined) {
+      doc.imageUrl = String(req.body.imageUrl || "").trim();
+    }
     await doc.save();
-    return res.status(200).json({ news: newsToDto(doc) });
+    return res.status(200).json({ news: newsToDto(doc, req.user.userId) });
   } catch (error) {
     console.log("Ошибка в PATCH /admin/news/:id:", error);
     return res.status(500).json({ message: "Внутренняя ошибка сервера" });

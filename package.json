@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "seed:dean-demo": "node src/scripts/seedDeanDemoData.js",
     "seed:teacher": "node src/scripts/seedTestTeacher.js",
     "reset:launch-data": "node src/scripts/resetLaunchData.js",
     "seed:iomas-teachers": "node src/createIOMASteachers.mjs",
