@@ -26,35 +26,35 @@ const FACULTIES = [
 ];
 
 const PI_4_10_STUDENTS = [
-  "Алексеев Григорий Дмитриевич",
-  "Белоколодских Сергей Юрьевич",
-  "Буронов Роман Витальевич",
-  "Головин Максим Дмитриевич",
-  "Гончаров Максим Евгеньевич",
-  "Катасонова Дарья Сергеевна",
-  "Крюкова Варвара Федоровна",
-  "Масленникова Алена Александровна",
-  "Матюшина Мария Сергеевна",
-  "Машина Марина Геннадьевна",
-  "Мягкая Анастасия Николаевна",
-  "Назаренко Никита Владиславович",
-  "Остатенко Денис Олегович",
-  "Подунов Илья Антонович",
-  "Попович Дмитрий Сергеевич",
-  "Пшенко Кирилл Александрович",
-  "Рожкин Максим Александрович",
-  "Рахимов Максим Юрьевич",
-  "Семенова Анастасия Анатольевна",
-  "Сердюк Артем Алексеевич",
-  "Сушко Дарья Дмитриевна",
-  "Тихох Данил Евгеньевич",
-  "Умников Иван Олегович",
-  "Фалеева Кристина Дмитриевна",
-  "Флейшман Александр Евгеньевич",
-  "Ширинет Лилия Викторовна",
-  "Шубин Егор Викторович",
-  "Якимов Дмитрий Андреевич",
-  "Якимова Валерия Владимировна",
+  { fullName: "Grigory Alekseev", username: "alekseev" },
+  { fullName: "Sergey Belokolodskikh", username: "belokolodskikh" },
+  { fullName: "Roman Buronov", username: "buronov" },
+  { fullName: "Maxim Golovin", username: "golovin" },
+  { fullName: "Maxim Goncharov", username: "goncharov" },
+  { fullName: "Daria Katasonova", username: "katasonova" },
+  { fullName: "Varvara Kryukova", username: "kryukova" },
+  { fullName: "Alena Maslennikova", username: "maslennikova" },
+  { fullName: "Maria Matyushina", username: "matyushina" },
+  { fullName: "Marina Mashina", username: "mashina" },
+  { fullName: "Anastasia Myagkaya", username: "myagkaya" },
+  { fullName: "Nikita Nazarenko", username: "nazarenko" },
+  { fullName: "Denis Ostatenko", username: "ostatenko" },
+  { fullName: "Ilya Podunov", username: "podunov" },
+  { fullName: "Dmitry Popovich", username: "popovich" },
+  { fullName: "Kirill Pshenko", username: "pshenko" },
+  { fullName: "Maxim Rozhkin", username: "rozhkin" },
+  { fullName: "Maxim Rakhimov", username: "rakhimov" },
+  { fullName: "Anastasia Semenova", username: "semenova" },
+  { fullName: "Artem Serdyuk", username: "serdyuk" },
+  { fullName: "Daria Sushko", username: "sushko" },
+  { fullName: "Danil Tikhokh", username: "tikhokh" },
+  { fullName: "Ivan Umnikov", username: "umnikov" },
+  { fullName: "Kristina Faleeva", username: "faleeva" },
+  { fullName: "Alexander Fleishman", username: "fleishman" },
+  { fullName: "Lilia Shirinet", username: "shirinet" },
+  { fullName: "Egor Shubin", username: "shubin" },
+  { fullName: "Dmitry Yakimov", username: "yakimov" },
+  { fullName: "Valeria Yakimova", username: "yakimova" },
 ];
 
 /**
@@ -182,50 +182,52 @@ export async function ensureDeanAcademicHierarchy() {
 
   await ensureCatalogTeachers();
   await ensureIomasTeachers();
+  await ensureDeanAdmin();
   await removeProgramDuplicates();
+  await cleanupLegacyDemoLocalUsers();
 }
 
 const CATALOG_TEACHERS = [
   {
-    username: "yasakov_as",
-    email: "yasakov.catalog@demo.local",
-    fullName: "Ясаков Александр Сергеевич",
+    username: "yasakov",
+    email: "yasakov",
+    fullName: "Alexander Yasakov",
   },
   {
-    username: "kononova_nn",
-    email: "kononova.catalog@demo.local",
-    fullName: "Кононова Наталья Николаевна",
+    username: "kononova",
+    email: "kononova",
+    fullName: "Natalia Kononova",
   },
 ];
 
 const IOMAS_TEACHERS = [
-  { fullName: "Подколзин Роман Вячеславович", username: "podkolzin_rv", email: "podkolzin.rv@demo.local" },
-  { fullName: "Черных Александр Николаевич", username: "chernykh_an", email: "chernykh.an@demo.local" },
-  { fullName: "Кусмагамбетов Серик Магометович", username: "kusmagambetov_sm", email: "kusmagambetov.sm@demo.local" },
-  { fullName: "Рябов Владимир Петрович", username: "ryabov_vp", email: "ryabov.vp@demo.local" },
-  { fullName: "Горюхина Елена Юрьевна", username: "goryukhina_ey", email: "goryukhina.ey@demo.local" },
-  { fullName: "Поддубный Сергей Сергеевич", username: "poddubnyy_ss", email: "poddubnyy.ss@demo.local" },
-  { fullName: "Кателиков Александр Николаевич", username: "katelikov_an", email: "katelikov.an@demo.local" },
-  { fullName: "Тютюников Александр Александрович", username: "tyutyunikov_aa", email: "tyutyunikov.aa@demo.local" },
-  { fullName: "Кузнецова Елена Дмитриевна", username: "kuznetsova_ed", email: "kuznetsova.ed@demo.local" },
-  { fullName: "Мистюкова Светлана Васильевна", username: "mistyukova_sv", email: "mistyukova.sv@demo.local" },
-  { fullName: "Ясаков Александр Сергеевич", username: "yasakov_as", email: "yasakov.as@demo.local" },
-  { fullName: "Семенова Инна Михайловна", username: "semenova_im", email: "semenova.im@demo.local" },
-  { fullName: "Ряполов Константин Яковлевич", username: "ryapolov_ky", email: "ryapolov.ky@demo.local" },
-  { fullName: "Рябова Евгения Петровна", username: "ryabova_ep", email: "ryabova.ep@demo.local" },
-  { fullName: "Кононова Наталья Николаевна", username: "kononova_nn", email: "kononova.nn@demo.local" },
-  { fullName: "Демидов Павел Валерьевич", username: "demidov_pv", email: "demidov.pv@demo.local" },
-  { fullName: "Трунов Максим Сергеевич", username: "trunov_ms", email: "trunov.ms@demo.local" },
-  { fullName: "Литвинова Людмила Ивановна", username: "litvinova_li", email: "litvinova.li@demo.local" },
-  { fullName: "Подлесный Артем Николаевич", username: "podlesnyy_an", email: "podlesnyy.an@demo.local" },
-  { fullName: "Хмелев Дмитрий Валерьевич", username: "khmelev_dv", email: "khmelev.dv@demo.local" },
+  { fullName: "Roman Podkolzin", username: "podkolzin", email: "podkolzin" },
+  { fullName: "Alexander Chernykh", username: "chernykh", email: "chernykh" },
+  { fullName: "Serik Kusmagambetov", username: "kusmagambetov", email: "kusmagambetov" },
+  { fullName: "Vladimir Ryabov", username: "ryabov", email: "ryabov" },
+  { fullName: "Elena Goryukhina", username: "goryukhina", email: "goryukhina" },
+  { fullName: "Sergey Poddubnyy", username: "poddubnyy", email: "poddubnyy" },
+  { fullName: "Alexander Katelikov", username: "katelikov", email: "katelikov" },
+  { fullName: "Alexander Tyutyunikov", username: "tyutyunikov", email: "tyutyunikov" },
+  { fullName: "Elena Kuznetsova", username: "kuznetsova", email: "kuznetsova" },
+  { fullName: "Svetlana Mistyukova", username: "mistyukova", email: "mistyukova" },
+  { fullName: "Alexander Yasakov", username: "yasakov", email: "yasakov" },
+  { fullName: "Inna Semenova", username: "semenova_teacher", email: "semenova_teacher" },
+  { fullName: "Konstantin Ryapolov", username: "ryapolov", email: "ryapolov" },
+  { fullName: "Evgenia Ryabova", username: "ryabova", email: "ryabova" },
+  { fullName: "Natalia Kononova", username: "kononova", email: "kononova" },
+  { fullName: "Pavel Demidov", username: "demidov", email: "demidov" },
+  { fullName: "Maxim Trunov", username: "trunov", email: "trunov" },
+  { fullName: "Lyudmila Litvinova", username: "litvinova", email: "litvinova" },
+  { fullName: "Artem Podlesnyy", username: "podlesnyy", email: "podlesnyy" },
+  { fullName: "Dmitry Khmelev", username: "khmelev", email: "khmelev" },
 ];
 
 /**
- * Два преподавателя для выпадающего списка в админке; пароль задаётся только при создании записи.
+ * Два преподавателя для выпадающего списка в админке; пароль задаётся при каждом seed.
  */
 async function ensureCatalogTeachers() {
-  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "teacher123");
+  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "123456");
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(defaultPassword, salt);
 
@@ -268,7 +270,7 @@ async function ensureCatalogTeachers() {
 }
 
 async function ensureIomasTeachers() {
-  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "teacher123");
+  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "123456");
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(defaultPassword, salt);
 
@@ -316,6 +318,38 @@ async function ensureIomasTeachers() {
   }
 }
 
+async function cleanupLegacyDemoLocalUsers() {
+  await User.deleteMany({ email: { $regex: /@demo\.local$/i } });
+}
+
+async function ensureDeanAdmin() {
+  const password = String(process.env.DEMO_ADMIN_PASSWORD || "123456");
+  const salt = await bcrypt.genSalt(10);
+  const passwordHash = await bcrypt.hash(password, salt);
+  const payload = {
+    username: "dean",
+    email: "dean",
+    password: passwordHash,
+    role: "admin",
+    fullName: "Dean Admin",
+    isEmailVerified: true,
+    profileImage: "",
+    groupId: null,
+  };
+
+  const existing =
+    (await User.findOne({ username: "dean" }).select("_id")) ||
+    (await User.findOne({ email: "dean" }).select("_id")) ||
+    (await User.findOne({ username: "dean_admin" }).select("_id")) ||
+    (await User.findOne({ email: "dean_admin@demo.local" }).select("_id"));
+
+  if (existing?._id) {
+    await User.updateOne({ _id: existing._id }, { $set: payload });
+  } else {
+    await User.create(payload);
+  }
+}
+
 async function removeProgramDuplicates() {
   const typoRegex = /^прикладная\s+информатикая$/i;
   const typoPrograms = await Program.find({ name: typoRegex }).select("_id");
@@ -326,17 +360,22 @@ async function removeProgramDuplicates() {
 }
 
 async function ensurePi410Students(groupId) {
-  const defaultPassword = String(process.env.DEMO_STUDENT_PASSWORD || "Student123!");
+  const defaultPassword = String(process.env.DEMO_STUDENT_PASSWORD || "123456");
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(defaultPassword, salt);
 
   for (let i = 0; i < PI_4_10_STUDENTS.length; i += 1) {
-    const fullName = PI_4_10_STUDENTS[i];
+    const student = PI_4_10_STUDENTS[i];
     const num = String(i + 1).padStart(2, "0");
-    const username = `pi410_${num}`;
-    const email = `pi410.${num}@demo.local`;
+    const username = String(student.username || `student${num}`).trim();
+    const email = username;
+    const fullName = String(student.fullName || username).trim();
+    const legacyUsername = `pi410_${num}`;
+    const legacyEmail = `pi410.${num}@demo.local`;
     const existing =
       (await User.findOne({ role: "student", fullName }).select("_id")) ||
+      (await User.findOne({ username: legacyUsername }).select("_id")) ||
+      (await User.findOne({ email: legacyEmail }).select("_id")) ||
       (await User.findOne({ email }).select("_id")) ||
       (await User.findOne({ username }).select("_id"));
 
@@ -394,7 +433,7 @@ async function ensureEfGroupsAndStudents(facultyId) {
   }
 
   const programId = program._id || program;
-  const defaultPassword = String(process.env.DEMO_STUDENT_PASSWORD || "Student123!");
+  const defaultPassword = String(process.env.DEMO_STUDENT_PASSWORD || "123456");
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(defaultPassword, salt);
 
@@ -423,7 +462,7 @@ async function ensureEfGroupsAndStudents(facultyId) {
     }
 
     const groupId = group._id || group;
-    for (const student of groupConfig.students || []) {
+    for (const [index, student] of (groupConfig.students || []).entries()) {
       const username = String(student.username || "").trim();
       const email = String(student.email || "").toLowerCase().trim();
       const fullName = String(student.fullName || "").trim();
@@ -435,6 +474,8 @@ async function ensureEfGroupsAndStudents(facultyId) {
       const existing =
         (await User.findOne({ email }).select("_id")) ||
         (await User.findOne({ username }).select("_id")) ||
+        (await User.findOne({ username: groupName === "ЭФ-4-10" ? `ef410_0${index + 1}` : `ef49_0${index + 1}` }).select("_id")) ||
+        (await User.findOne({ email: groupName === "ЭФ-4-10" ? `ef410.0${index + 1}@demo.local` : `ef49.0${index + 1}@demo.local` }).select("_id")) ||
         (await User.findOne({ role: "student", fullName }).select("_id"));
 
       const payload = {

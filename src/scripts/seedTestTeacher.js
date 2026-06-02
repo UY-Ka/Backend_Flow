@@ -56,6 +56,7 @@ async function upsertTeacher({ username, email, password }) {
       email: String(email).toLowerCase().trim(),
       password: passwordHash,
       role: "teacher",
+      fullName: "Demo Teacher",
       isEmailVerified: true,
       profileImage: "",
       groupId: null,
@@ -75,6 +76,7 @@ async function upsertStudent({ username, email, password, groupId }) {
       email: String(email).toLowerCase().trim(),
       password: passwordHash,
       role: "student",
+      fullName: "Demo Student",
       isEmailVerified: true,
       profileImage: "",
       groupId,
@@ -156,9 +158,9 @@ async function main() {
   const mongoUrl = mustEnv("MONGO_URL");
   await mongoose.connect(mongoUrl);
 
-  const teacherUsername = "teacher_demo";
-  const teacherEmail = "teacher_demo@demo.local";
-  const teacherPassword = "Teacher123!";
+  const teacherUsername = "teacher1";
+  const teacherEmail = "teacher1";
+  const teacherPassword = "123456";
 
   const faculty = await upsertFaculty();
   const program = await upsertProgram(faculty._id);
@@ -169,9 +171,9 @@ async function main() {
     password: teacherPassword,
   });
 
-  const studentUsername = "student_demo";
-  const studentEmail = "student_demo@demo.local";
-  const studentPassword = "Student123!";
+  const studentUsername = "student1";
+  const studentEmail = "student1";
+  const studentPassword = "123456";
   const student = await upsertStudent({
     username: studentUsername,
     email: studentEmail,
@@ -179,9 +181,9 @@ async function main() {
     groupId: group._id,
   });
 
-  const adminUsername = "dean_admin";
-  const adminEmail = "dean_admin@demo.local";
-  const adminPassword = "Admin123!";
+  const adminUsername = "dean";
+  const adminEmail = "dean";
+  const adminPassword = "123456";
   const salt = await bcrypt.genSalt(10);
   const adminHash = await bcrypt.hash(adminPassword, salt);
   const admin = await User.findOneAndUpdate(
@@ -232,4 +234,3 @@ main().catch((e) => {
   console.error("❌ seed failed:", e);
   process.exit(1);
 });
-

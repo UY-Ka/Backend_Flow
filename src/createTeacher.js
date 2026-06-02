@@ -11,7 +11,7 @@ async function createTeacher() {
     });
     
     // Проверяем, существует ли уже преподаватель с таким email
-    const existingTeacher = await User.findOne({ email: 'teacher@example.com' });
+    const existingTeacher = await User.findOne({ username: 'teacher' });
     if (existingTeacher) {
       console.log('Преподаватель с таким email уже существует:', existingTeacher);
       await mongoose.disconnect();
@@ -20,14 +20,15 @@ async function createTeacher() {
     
     // Хешируем пароль
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('teacher123', salt);
+    const hashedPassword = await bcrypt.hash('123456', salt);
     
     // Создаем нового преподавателя
     const teacher = new User({
-      email: 'teacher@example.com',
-      username: 'teacher_user',
+      email: 'teacher',
+      username: 'teacher',
       password: hashedPassword,
       role: 'teacher',
+      fullName: 'Demo Teacher',
       isEmailVerified: true
     });
     

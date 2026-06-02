@@ -6,46 +6,46 @@ import Program from "../models/Program.js";
 import Group from "../models/Group.js";
 import User from "../models/User.js";
 
-const STUDENT_NAMES = [
-  "Алексеев Григорий Дмитриевич",
-  "Баймуратлиев Огулшен",
-  "Белоколодских Сергей Юрьевич",
-  "Буронов Роман Витальевич",
-  "Головин Макет Дмитриевич",
-  "Гончаров Максим Евгеньевич",
-  "Долиха Макен Андреевич",
-  "Катасонова Дарья Сергеевна",
-  "Крюкова Варвара Федоровна",
-  "Масленникова Алена Александровна",
-  "Матюшина Мария Сергеевна",
-  "Машина Марина Геннадьевна",
-  "Мягкая Анастасия Анастольевна",
-  "Назарако Никита Владиславович",
-  "Остатенко Лев Олегович",
-  "Пупнов Илья Антонович",
-  "Попович Дмитрий Сергеевич",
-  "Плюско Кирилл Александрович",
-  "Рогожин Денис Александрович",
-  "Рахимов Максим Юрьевич",
-  "Семенова Анастасия Анатольевна",
-  "Сердюк Артем Алексеевич",
-  "Сушко Дарья Дмитриевна",
-  "Тихох Данил Евгеньевич",
-  "Умников Иван Олегович",
-  "Фалеева Кристина Дмитриевна",
-  "Флейшман Александр Евгеньевич",
-  "Ширинет Лилия Викторовна",
-  "Шубин Егор Викторович",
-  "Якимов Дмитрий Андреевич",
-  "Якимова Валерия Николаевна",
+const STUDENTS = [
+  { fullName: "Grigory Alekseev", username: "alekseev" },
+  { fullName: "Ogulshen Baymuratliev", username: "baymuratliev" },
+  { fullName: "Sergey Belokolodskikh", username: "belokolodskikh" },
+  { fullName: "Roman Buronov", username: "buronov" },
+  { fullName: "Maket Golovin", username: "golovin" },
+  { fullName: "Maxim Goncharov", username: "goncharov" },
+  { fullName: "Maken Dolikha", username: "dolikha" },
+  { fullName: "Daria Katasonova", username: "katasonova" },
+  { fullName: "Varvara Kryukova", username: "kryukova" },
+  { fullName: "Alena Maslennikova", username: "maslennikova" },
+  { fullName: "Maria Matyushina", username: "matyushina" },
+  { fullName: "Marina Mashina", username: "mashina" },
+  { fullName: "Anastasia Myagkaya", username: "myagkaya" },
+  { fullName: "Nikita Nazarako", username: "nazarako" },
+  { fullName: "Lev Ostatenko", username: "ostatenko" },
+  { fullName: "Ilya Pupnov", username: "pupnov" },
+  { fullName: "Dmitry Popovich", username: "popovich" },
+  { fullName: "Kirill Plyusko", username: "plyusko" },
+  { fullName: "Denis Rogozhin", username: "rogozhin" },
+  { fullName: "Maxim Rakhimov", username: "rakhimov" },
+  { fullName: "Anastasia Semenova", username: "semenova" },
+  { fullName: "Artem Serdyuk", username: "serdyuk" },
+  { fullName: "Daria Sushko", username: "sushko" },
+  { fullName: "Danil Tikhokh", username: "tikhokh" },
+  { fullName: "Ivan Umnikov", username: "umnikov" },
+  { fullName: "Kristina Faleeva", username: "faleeva" },
+  { fullName: "Alexander Fleishman", username: "fleishman" },
+  { fullName: "Lilia Shirinet", username: "shirinet" },
+  { fullName: "Egor Shubin", username: "shubin" },
+  { fullName: "Dmitry Yakimov", username: "yakimov" },
+  { fullName: "Valeria Yakimova", username: "yakimova" },
 ];
 
 function makeStudentUsername(index) {
-  return `student_${String(index + 1).padStart(2, "0")}`;
+  return STUDENTS[index]?.username || `student${String(index + 1).padStart(2, "0")}`;
 }
 
 function makeStudentEmail(index) {
-  return `student.${String(index + 1).padStart(2, "0")}@demo.local`;
+  return makeStudentUsername(index);
 }
 
 async function upsertFaculty() {
@@ -112,21 +112,21 @@ async function main() {
   const program = await upsertProgram(faculty._id);
   const group = await upsertGroup(program._id);
 
-  const adminPassword = process.env.DEMO_ADMIN_PASSWORD || "Admin123!";
+  const adminPassword = process.env.DEMO_ADMIN_PASSWORD || "123456";
   const admin = await upsertUser({
-    username: "dean_admin",
-    email: "dean_admin@demo.local",
+    username: "dean",
+    email: "dean",
     password: adminPassword,
     role: "admin",
-    fullName: "Деканат Администратор",
+    fullName: "Dean Admin",
   });
 
-  const studentPassword = process.env.DEMO_STUDENT_PASSWORD || "Student123!";
+  const studentPassword = process.env.DEMO_STUDENT_PASSWORD || "123456";
   const createdStudents = [];
-  for (let index = 0; index < STUDENT_NAMES.length; index += 1) {
+  for (let index = 0; index < STUDENTS.length; index += 1) {
     const username = makeStudentUsername(index);
     const email = makeStudentEmail(index);
-    const fullName = STUDENT_NAMES[index];
+    const fullName = STUDENTS[index].fullName;
     const student = await upsertUser({
       username,
       email,
@@ -137,6 +137,8 @@ async function main() {
     });
     createdStudents.push({ username, email, fullName });
   }
+
+  await User.deleteMany({ email: { $regex: /@demo\.local$/i } });
 
   console.log("✅ Seed completed: dean admin and student demo accounts created.");
   console.log({

@@ -4,26 +4,26 @@ import bcrypt from "bcryptjs";
 import "dotenv/config";
 
 const IOMAS_TEACHERS = [
-  { fullName: "Подколзин Роман Вячеславович", username: "podkolzin_rv", email: "podkolzin.rv@demo.local" },
-  { fullName: "Черных Александр Николаевич", username: "chernykh_an", email: "chernykh.an@demo.local" },
-  { fullName: "Кусмагамбетов Серик Магометович", username: "kusmagambetov_sm", email: "kusmagambetov.sm@demo.local" },
-  { fullName: "Рябов Владимир Петрович", username: "ryabov_vp", email: "ryabov.vp@demo.local" },
-  { fullName: "Горюхина Елена Юрьевна", username: "goryukhina_ey", email: "goryukhina.ey@demo.local" },
-  { fullName: "Поддубный Сергей Сергеевич", username: "poddubnyy_ss", email: "poddubnyy.ss@demo.local" },
-  { fullName: "Кателиков Александр Николаевич", username: "katelikov_an", email: "katelikov.an@demo.local" },
-  { fullName: "Тютюников Александр Александрович", username: "tyutyunikov_aa", email: "tyutyunikov.aa@demo.local" },
-  { fullName: "Кузнецова Елена Дмитриевна", username: "kuznetsova_ed", email: "kuznetsova.ed@demo.local" },
-  { fullName: "Мистюкова Светлана Васильевна", username: "mistyukova_sv", email: "mistyukova.sv@demo.local" },
-  { fullName: "Ясаков Александр Сергеевич", username: "yasakov_as", email: "yasakov.as@demo.local" },
-  { fullName: "Семенова Инна Михайловна", username: "semenova_im", email: "semenova.im@demo.local" },
-  { fullName: "Ряполов Константин Яковлевич", username: "ryapolov_ky", email: "ryapolov.ky@demo.local" },
-  { fullName: "Рябова Евгения Петровна", username: "ryabova_ep", email: "ryabova.ep@demo.local" },
-  { fullName: "Кононова Наталья Николаевна", username: "kononova_nn", email: "kononova.nn@demo.local" },
-  { fullName: "Демидов Павел Валерьевич", username: "demidov_pv", email: "demidov.pv@demo.local" },
-  { fullName: "Трунов Максим Сергеевич", username: "trunov_ms", email: "trunov.ms@demo.local" },
-  { fullName: "Литвинова Людмила Ивановна", username: "litvinova_li", email: "litvinova.li@demo.local" },
-  { fullName: "Подлесный Артем Николаевич", username: "podlesnyy_an", email: "podlesnyy.an@demo.local" },
-  { fullName: "Хмелев Дмитрий Валерьевич", username: "khmelev_dv", email: "khmelev.dv@demo.local" },
+  { fullName: "Roman Podkolzin", username: "podkolzin", email: "podkolzin" },
+  { fullName: "Alexander Chernykh", username: "chernykh", email: "chernykh" },
+  { fullName: "Serik Kusmagambetov", username: "kusmagambetov", email: "kusmagambetov" },
+  { fullName: "Vladimir Ryabov", username: "ryabov", email: "ryabov" },
+  { fullName: "Elena Goryukhina", username: "goryukhina", email: "goryukhina" },
+  { fullName: "Sergey Poddubnyy", username: "poddubnyy", email: "poddubnyy" },
+  { fullName: "Alexander Katelikov", username: "katelikov", email: "katelikov" },
+  { fullName: "Alexander Tyutyunikov", username: "tyutyunikov", email: "tyutyunikov" },
+  { fullName: "Elena Kuznetsova", username: "kuznetsova", email: "kuznetsova" },
+  { fullName: "Svetlana Mistyukova", username: "mistyukova", email: "mistyukova" },
+  { fullName: "Alexander Yasakov", username: "yasakov", email: "yasakov" },
+  { fullName: "Inna Semenova", username: "semenova_teacher", email: "semenova_teacher" },
+  { fullName: "Konstantin Ryapolov", username: "ryapolov", email: "ryapolov" },
+  { fullName: "Evgenia Ryabova", username: "ryabova", email: "ryabova" },
+  { fullName: "Natalia Kononova", username: "kononova", email: "kononova" },
+  { fullName: "Pavel Demidov", username: "demidov", email: "demidov" },
+  { fullName: "Maxim Trunov", username: "trunov", email: "trunov" },
+  { fullName: "Lyudmila Litvinova", username: "litvinova", email: "litvinova" },
+  { fullName: "Artem Podlesnyy", username: "podlesnyy", email: "podlesnyy" },
+  { fullName: "Dmitry Khmelev", username: "khmelev", email: "khmelev" },
 ];
 
 async function createIomasTeachers() {
@@ -32,7 +32,7 @@ async function createIomasTeachers() {
   }
 
   await mongoose.connect(process.env.MONGO_URL);
-  const password = String(process.env.DEMO_TEACHER_PASSWORD || "teacher123");
+  const password = String(process.env.DEMO_TEACHER_PASSWORD || "123456");
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
 
@@ -79,6 +79,8 @@ async function createIomasTeachers() {
     });
     result.push({ fullName, username, email, password, status: "created" });
   }
+
+  await User.deleteMany({ email: { $regex: /@demo\.local$/i }, role: "teacher" });
 
   return result;
 }
