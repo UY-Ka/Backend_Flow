@@ -36,16 +36,23 @@ const toPublicUser = (user) => ({
 
 const normalizeIdentifier = (value) => String(value || "").trim();
 
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const findUserByEmailOrUsername = (value) => {
     const raw = normalizeIdentifier(value);
     const lower = raw.toLowerCase();
 
     if (!raw) return null;
 
+    const exact = new RegExp(`^${escapeRegex(raw)}$`, "i");
+
     return User.findOne({
         $or: [
             { email: lower },
+            { email: exact },
             { username: raw },
+            { username: exact },
+            { fullName: exact },
         ],
     });
 };
@@ -233,21 +240,13 @@ router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const raw = String(email || "").trim();
-        const lower = raw.toLowerCase();
-        const user = await User.findOne({
-            $or: [
-                { email: lower },
-                { username: raw },
-            ],
-        });
+        const user = await findUserByEmailOrUsername(email);
         
         if (!user) {
-            // Заглушка: возвращаем общую ошибку, но не уточняем, что пользователь не существует
             return res.status(400).json({ message: "Неверные учетные данные" });
         }
 
-        const isPasswordCorrect = await user.comparePassword(password || "");
+        const isPasswordCorrect = await user.comparePassword(String(password || ""));
         if (!isPasswordCorrect) {
             return res.status(400).json({ message: "Неверные учетные данные" });
         }
