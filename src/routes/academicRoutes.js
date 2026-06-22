@@ -4,6 +4,7 @@ import path from "path";
 import mongoose from "mongoose";
 import multer from "multer";
 import xlsx from "xlsx";
+import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Group from "../models/Group.js";
 import ScheduleItem from "../models/ScheduleItem.js";
@@ -244,6 +245,41 @@ router.post("/me/profile/avatar", avatarUpload.single("file"), async (req, res) 
     console.log("Ошибка в POST /academic/me/profile/avatar:", error);
     const msg = error?.message ? String(error.message) : "Внутренняя ошибка сервера";
     return res.status(500).json({ message: msg });
+  }
+});
+
+router.patch("/me/password", async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Введите текущий и новый пароль" });
+    }
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ message: "Новый пароль должен быть не короче 6 символов" });
+    }
+    if (String(currentPassword) === String(newPassword)) {
+      return res.status(400).json({ message: "Новый пароль должен отличаться от текущего" });
+    }
+
+    const user = await User.findById(req.user.userId).select("+password");
+    if (!user) return res.status(404).json({ message: "Пользователь не найден" });
+
+    const isCurrentPasswordCorrect = await user.comparePassword(String(currentPassword));
+    if (!isCurrentPasswordCorrect) {
+      return res.status(400).json({ message: "Текущий пароль указан неверно" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(String(newPassword), salt);
+    user.passwordResetCodeHash = null;
+    user.passwordResetCodeExpiresAt = null;
+    await user.save();
+
+    return res.status(200).json({ message: "Пароль успешно изменен" });
+  } catch (error) {
+    console.log("Ошибка в PATCH /academic/me/password:", error);
+    return res.status(500).json({ message: "Внутренняя ошибка сервера" });
   }
 });
 

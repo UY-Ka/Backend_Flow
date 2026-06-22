@@ -34,6 +34,22 @@ const toPublicUser = (user) => ({
     subgroup: user.subgroup,
 });
 
+const normalizeIdentifier = (value) => String(value || "").trim();
+
+const findUserByEmailOrUsername = (value) => {
+    const raw = normalizeIdentifier(value);
+    const lower = raw.toLowerCase();
+
+    if (!raw) return null;
+
+    return User.findOne({
+        $or: [
+            { email: lower },
+            { username: raw },
+        ],
+    });
+};
+
 const generateAndStoreVerificationCode = async (user) => {
     const code = generateOtpCode();
     user.emailVerificationCodeHash = hashOtp(code);
@@ -91,7 +107,6 @@ router.post("/register", async (req, res) => {
             isEmailVerified: true,
         });
 
-        // Устанавливаем роль из запроса, если указана и допустима
         if (role && ['student', 'teacher', 'admin'].includes(role)) {
             user.role = role;
         } else {
@@ -107,7 +122,6 @@ router.post("/register", async (req, res) => {
             user.subgroup = sg;
         }
         
-        // Устанавливаем groupId только для студентов
         if (user.role === "student" && !user.groupId) {
             try {
                 const academicData = await ensureDefaultAcademicData();
@@ -116,7 +130,6 @@ router.post("/register", async (req, res) => {
                 }
             } catch (groupError) {
                 console.log("Ошибка при получении данных группы:", groupError);
-                // Можно установить резервную группу или оставить groupId пустым
             }
         } else if (user.role !== "student") {
             user.subgroup = "a";
@@ -253,13 +266,12 @@ router.post("/login", async (req, res) => {
 
 router.post("/forgot-password", async (req, res) => {
     try {
-        const { email } = req.body;
-        if (!email) {
-            return res.status(400).json({ message: "Email обязателен" });
+        const identifier = normalizeIdentifier(req.body?.identifier || req.body?.email);
+        if (!identifier) {
+            return res.status(400).json({ message: "Email или логин обязателен" });
         }
 
-        const normalizedEmail = String(email).toLowerCase().trim();
-        const user = await User.findOne({ email: normalizedEmail });
+        const user = await findUserByEmailOrUsername(identifier);
         if (!user) {
             return res.status(200).json({ message: "Если аккаунт существует, код отправлен на почту" });
         }
@@ -274,17 +286,17 @@ router.post("/forgot-password", async (req, res) => {
 
 router.post("/reset-password", async (req, res) => {
     try {
-        const { email, code, newPassword } = req.body;
+        const identifier = normalizeIdentifier(req.body?.identifier || req.body?.email);
+        const { code, newPassword } = req.body;
 
-        if (!email || !code || !newPassword) {
-            return res.status(400).json({ message: "Email, код и новый пароль обязательны" });
+        if (!identifier || !code || !newPassword) {
+            return res.status(400).json({ message: "Email или логин, код и новый пароль обязательны" });
         }
         if (String(newPassword).length < 6) {
             return res.status(400).json({ message: "Пароль должен составлять больше 6 символов" });
         }
 
-        const normalizedEmail = String(email).toLowerCase().trim();
-        const user = await User.findOne({ email: normalizedEmail });
+        const user = await findUserByEmailOrUsername(identifier);
         if (!user) {
             return res.status(400).json({ message: "Пользователь не найден" });
         }
