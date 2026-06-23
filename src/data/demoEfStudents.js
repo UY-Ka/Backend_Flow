@@ -4,25 +4,25 @@ export const EF_DEMO_GROUPS = [
     course: 4,
     students: [
       {
-        fullName: "Alex Ef410",
+        fullName: "Алексей Егоров",
         username: "alex410",
         email: "alex410",
         subgroup: "a",
       },
       {
-        fullName: "Maria Ef410",
+        fullName: "Мария Крылова",
         username: "maria410",
         email: "maria410",
         subgroup: "a",
       },
       {
-        fullName: "Dmitry Ef410",
+        fullName: "Дмитрий Сафонов",
         username: "dmitry410",
         email: "dmitry410",
         subgroup: "b",
       },
       {
-        fullName: "Anna Ef410",
+        fullName: "Анна Лебедева",
         username: "anna410",
         email: "anna410",
         subgroup: "b",
@@ -34,25 +34,25 @@ export const EF_DEMO_GROUPS = [
     course: 4,
     students: [
       {
-        fullName: "Alex Ef49",
+        fullName: "Алексей Федоров",
         username: "alex49",
         email: "alex49",
         subgroup: "a",
       },
       {
-        fullName: "Maria Ef49",
+        fullName: "Мария Орлова",
         username: "maria49",
         email: "maria49",
         subgroup: "a",
       },
       {
-        fullName: "Dmitry Ef49",
+        fullName: "Дмитрий Новиков",
         username: "dmitry49",
         email: "dmitry49",
         subgroup: "b",
       },
       {
-        fullName: "Anna Ef49",
+        fullName: "Анна Васильева",
         username: "anna49",
         email: "anna49",
         subgroup: "b",
