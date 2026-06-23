@@ -227,7 +227,7 @@ const IOMAS_TEACHERS = [
  * Два преподавателя для выпадающего списка в админке; пароль задаётся при каждом seed.
  */
 async function ensureCatalogTeachers() {
-  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "123456");
+  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "12345678");
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(defaultPassword, salt);
 
@@ -270,7 +270,7 @@ async function ensureCatalogTeachers() {
 }
 
 async function ensureIomasTeachers() {
-  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "123456");
+  const defaultPassword = String(process.env.DEMO_TEACHER_PASSWORD || "12345678");
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(defaultPassword, salt);
 
