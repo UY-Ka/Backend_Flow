@@ -4,6 +4,7 @@ import Program from "../models/Program.js";
 import Group from "../models/Group.js";
 import ScheduleItem from "../models/ScheduleItem.js";
 import User from "../models/User.js";
+import Grade from "../models/Grade.js";
 import { EF_DEMO_GROUPS } from "../data/demoEfStudents.js";
 
 /** Значения формы обучения в БД (совпадают с клиентом) */
@@ -26,35 +27,35 @@ const FACULTIES = [
 ];
 
 const PI_4_10_STUDENTS = [
-  { fullName: "Grigory Alekseev", username: "alekseev" },
-  { fullName: "Sergey Belokolodskikh", username: "belokolodskikh" },
-  { fullName: "Roman Buronov", username: "buronov" },
-  { fullName: "Maxim Golovin", username: "golovin" },
-  { fullName: "Maxim Goncharov", username: "goncharov" },
-  { fullName: "Daria Katasonova", username: "katasonova" },
-  { fullName: "Varvara Kryukova", username: "kryukova" },
-  { fullName: "Alena Maslennikova", username: "maslennikova" },
-  { fullName: "Maria Matyushina", username: "matyushina" },
-  { fullName: "Marina Mashina", username: "mashina" },
-  { fullName: "Anastasia Myagkaya", username: "myagkaya" },
-  { fullName: "Nikita Nazarenko", username: "nazarenko" },
-  { fullName: "Denis Ostatenko", username: "ostatenko" },
-  { fullName: "Ilya Podunov", username: "podunov" },
-  { fullName: "Dmitry Popovich", username: "popovich" },
-  { fullName: "Kirill Pshenko", username: "pshenko" },
-  { fullName: "Maxim Rozhkin", username: "rozhkin" },
-  { fullName: "Maxim Rakhimov", username: "rakhimov" },
-  { fullName: "Anastasia Semenova", username: "semenova" },
-  { fullName: "Artem Serdyuk", username: "serdyuk" },
-  { fullName: "Daria Sushko", username: "sushko" },
-  { fullName: "Danil Tikhokh", username: "tikhokh" },
-  { fullName: "Ivan Umnikov", username: "umnikov" },
-  { fullName: "Kristina Faleeva", username: "faleeva" },
-  { fullName: "Alexander Fleishman", username: "fleishman" },
-  { fullName: "Lilia Shirinet", username: "shirinet" },
-  { fullName: "Egor Shubin", username: "shubin" },
-  { fullName: "Dmitry Yakimov", username: "yakimov" },
-  { fullName: "Valeria Yakimova", username: "yakimova" },
+  { fullName: "Алексеев Григорий Сергеевич", username: "alekseev" },
+  { fullName: "Белоколодских Сергей Игоревич", username: "belokolodskikh" },
+  { fullName: "Буронов Роман Дмитриевич", username: "buronov" },
+  { fullName: "Головин Максим Андреевич", username: "golovin" },
+  { fullName: "Гончаров Максим Олегович", username: "goncharov" },
+  { fullName: "Катасонова Дарья Павловна", username: "katasonova" },
+  { fullName: "Крюкова Варвара Ильинична", username: "kryukova" },
+  { fullName: "Масленникова Алена Сергеевна", username: "maslennikova" },
+  { fullName: "Матюшина Мария Алексеевна", username: "matyushina" },
+  { fullName: "Машина Марина Викторовна", username: "mashina" },
+  { fullName: "Мягкая Анастасия Сергеевна", username: "myagkaya" },
+  { fullName: "Назаренко Никита Олегович", username: "nazarenko" },
+  { fullName: "Остатенко Денис Игоревич", username: "ostatenko" },
+  { fullName: "Подунов Илья Александрович", username: "podunov" },
+  { fullName: "Попович Дмитрий Романович", username: "popovich" },
+  { fullName: "Пшенко Кирилл Андреевич", username: "pshenko" },
+  { fullName: "Рожкин Максим Сергеевич", username: "rozhkin" },
+  { fullName: "Рахимов Максим Ильдарович", username: "rakhimov" },
+  { fullName: "Семенова Анастасия Игоревна", username: "semenova" },
+  { fullName: "Сердюк Артем Владимирович", username: "serdyuk" },
+  { fullName: "Сушко Дарья Максимовна", username: "sushko" },
+  { fullName: "Тихох Данил Алексеевич", username: "tikhokh" },
+  { fullName: "Умников Иван Сергеевич", username: "umnikov" },
+  { fullName: "Фалеева Кристина Андреевна", username: "faleeva" },
+  { fullName: "Флейшман Александр Олегович", username: "fleishman" },
+  { fullName: "Ширинет Лилия Павловна", username: "shirinet" },
+  { fullName: "Шубин Егор Дмитриевич", username: "shubin" },
+  { fullName: "Якимов Дмитрий Сергеевич", username: "yakimov" },
+  { fullName: "Якимова Валерия Андреевна", username: "yakimova" },
 ];
 
 /**
@@ -159,6 +160,7 @@ export async function ensureDeanAcademicHierarchy() {
       }
 
       await ensurePi410Students(canonGroup._id);
+      await ensurePresentationStudent(canonGroup._id);
     }
 
     await ensureEfGroupsAndStudents(econ._id);
@@ -191,36 +193,39 @@ const CATALOG_TEACHERS = [
   {
     username: "yasakov",
     email: "yasakov",
-    fullName: "Alexander Yasakov",
+    fullName: "Ясаков Александр Владимирович",
   },
   {
     username: "kononova",
     email: "kononova",
-    fullName: "Natalia Kononova",
+    fullName: "Кононова Наталья Александровна",
   },
 ];
 
 const IOMAS_TEACHERS = [
-  { fullName: "Roman Podkolzin", username: "podkolzin", email: "podkolzin" },
-  { fullName: "Alexander Chernykh", username: "chernykh", email: "chernykh" },
-  { fullName: "Serik Kusmagambetov", username: "kusmagambetov", email: "kusmagambetov" },
-  { fullName: "Vladimir Ryabov", username: "ryabov", email: "ryabov" },
-  { fullName: "Elena Goryukhina", username: "goryukhina", email: "goryukhina" },
-  { fullName: "Sergey Poddubnyy", username: "poddubnyy", email: "poddubnyy" },
-  { fullName: "Alexander Katelikov", username: "katelikov", email: "katelikov" },
-  { fullName: "Alexander Tyutyunikov", username: "tyutyunikov", email: "tyutyunikov" },
-  { fullName: "Elena Kuznetsova", username: "kuznetsova", email: "kuznetsova" },
-  { fullName: "Svetlana Mistyukova", username: "mistyukova", email: "mistyukova" },
-  { fullName: "Alexander Yasakov", username: "yasakov", email: "yasakov" },
-  { fullName: "Inna Semenova", username: "semenova_teacher", email: "semenova_teacher" },
-  { fullName: "Konstantin Ryapolov", username: "ryapolov", email: "ryapolov" },
-  { fullName: "Evgenia Ryabova", username: "ryabova", email: "ryabova" },
-  { fullName: "Natalia Kononova", username: "kononova", email: "kononova" },
-  { fullName: "Pavel Demidov", username: "demidov", email: "demidov" },
-  { fullName: "Maxim Trunov", username: "trunov", email: "trunov" },
-  { fullName: "Lyudmila Litvinova", username: "litvinova", email: "litvinova" },
-  { fullName: "Artem Podlesnyy", username: "podlesnyy", email: "podlesnyy" },
-  { fullName: "Dmitry Khmelev", username: "khmelev", email: "khmelev" },
+  { fullName: "Подколзин Роман Викторович", username: "podkolzin", email: "podkolzin" },
+  { fullName: "Черных Александр Анатольевич", username: "chernykh", email: "chernykh" },
+  { fullName: "Кусмагамбетов Серик Амангельдиевич", username: "kusmagambetov", email: "kusmagambetov" },
+  { fullName: "Рябов Владимир Николаевич", username: "ryabov", email: "ryabov" },
+  { fullName: "Горюхина Елена Александровна", username: "goryukhina", email: "goryukhina" },
+  { fullName: "Поддубный Сергей Викторович", username: "poddubnyy", email: "poddubnyy" },
+  { fullName: "Кателиков Александр Николаевич", username: "katelikov", email: "katelikov" },
+  { fullName: "Тютюников Александр Иванович", username: "tyutyunikov", email: "tyutyunikov" },
+  { fullName: "Кузнецова Елена Владимировна", username: "kuznetsova", email: "kuznetsova" },
+  { fullName: "Мистюкова Светлана Викторовна", username: "mistyukova", email: "mistyukova" },
+  { fullName: "Ясаков Александр Владимирович", username: "yasakov", email: "yasakov" },
+  { fullName: "Семенова Инна Николаевна", username: "semenova_teacher", email: "semenova_teacher" },
+  { fullName: "Ряполов Константин Викторович", username: "ryapolov", email: "ryapolov" },
+  { fullName: "Рябова Евгения Александровна", username: "ryabova", email: "ryabova" },
+  { fullName: "Кононова Наталья Александровна", username: "kononova", email: "kononova" },
+  { fullName: "Демидов Павел Александрович", username: "demidov", email: "demidov" },
+  { fullName: "Трунов Максим Сергеевич", username: "trunov", email: "trunov" },
+  { fullName: "Литвинова Людмила Александровна", username: "litvinova", email: "litvinova" },
+  { fullName: "Подлесный Артем Сергеевич", username: "podlesnyy", email: "podlesnyy" },
+  { fullName: "Хмелев Дмитрий Владимирович", username: "khmelev", email: "khmelev" },
+  { fullName: "Иванов Сергей Петрович", username: "teacher2", email: "teacher2" },
+  { fullName: "Петрова Марина Андреевна", username: "teacher3", email: "teacher3" },
+  { fullName: "Смирнов Алексей Викторович", username: "teacher4", email: "teacher4" },
 ];
 
 /**
@@ -331,7 +336,7 @@ async function ensureDeanAdmin() {
     email: "dean",
     password: passwordHash,
     role: "admin",
-    fullName: "Dean Admin",
+    fullName: "Администратор деканата",
     isEmailVerified: true,
     profileImage: "",
     groupId: null,
@@ -411,6 +416,77 @@ async function ensurePi410Students(groupId) {
       fullName,
       profileImage: "",
     });
+  }
+}
+
+async function ensurePresentationStudent(groupId) {
+  const passwordHash = await bcrypt.hash("12345678", await bcrypt.genSalt(10));
+  const payload = {
+    username: "demo_student",
+    email: "demo_student",
+    password: passwordHash,
+    role: "student",
+    fullName: "Иванов Артем Сергеевич",
+    isEmailVerified: true,
+    groupId,
+    studyForm: "full-time",
+    subgroup: "a",
+    profileImage: "",
+  };
+
+  const existing =
+    (await User.findOne({ username: payload.username }).select("_id")) ||
+    (await User.findOne({ email: payload.email }).select("_id"));
+
+  const student = existing?._id
+    ? await User.findOneAndUpdate(
+        { _id: existing._id },
+        { $set: payload },
+        { returnDocument: "after" }
+      )
+    : await User.create(payload);
+
+  const grades = [
+    {
+      subject: "Базы данных",
+      value: 5,
+      controlType: "exam",
+      semester: "7 семестр",
+      comment: "Отличная работа на практических занятиях",
+    },
+    {
+      subject: "Web-разработка",
+      value: 4,
+      controlType: "exam",
+      semester: "7 семестр",
+      comment: "Уверенно выполнен итоговый проект",
+    },
+    {
+      subject: "Информационные системы",
+      value: "зачет",
+      controlType: "credit",
+      semester: "7 семестр",
+      comment: "Зачтено",
+    },
+  ];
+
+  for (const grade of grades) {
+    await Grade.findOneAndUpdate(
+      {
+        userId: student._id,
+        subject: grade.subject,
+        semester: grade.semester,
+        controlType: grade.controlType,
+      },
+      {
+        $set: {
+          ...grade,
+          userId: student._id,
+          date: new Date(),
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
   }
 }
 
